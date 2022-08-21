@@ -31,6 +31,11 @@ async function main() {
     wallet
   );
 
+  // DAI and WETH balances
+  const daiBal = await dai.balanceOf(wallet.address);
+  const wethBal = await weth.balanceOf(wallet.address);
+
+  // CONTRACTS
   const UniV2Factory = new ethers.Contract(
     "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
     UniswapV2FactoryABI,
@@ -55,23 +60,24 @@ async function main() {
   console.log("INTERACTING WITH CONTRACT: UniswapV2Factory");
   console.log(`///////////////////////////// \n`);
 
-  const daiBal = await dai.balanceOf(wallet.address);
-  const wethBal = await weth.balanceOf(wallet.address);
-
   console.log("DAI Balance: ", ethers.utils.formatUnits(daiBal));
   console.log("WETH Balance: ", ethers.utils.formatUnits(wethBal));
 
+  // Get Uniswap Token pair of DAI & WETH
   const pair = await UniV2Factory.getPair(dai.address, weth.address).then(
     (res) => new ethers.Contract(res, UniswapV2PairABI, wallet)
   );
 
-  const pairReserves = [];
-  await pair.getReserves().then((res) => {
-    res.slice(0, 2).map((i) => pairReserves.push(i.toString()));
+  // Get Reserves of pair, returns array of [DAI, WETH] reserves
+  const pairReserves = pair.getReserves().then((res) => {
+    res.slice(0, 2);
   });
   console.log("DAI-WETH UniswapV2 pool: ", pair.address);
   console.log(pairReserves.map((i) => i));
 
+  // Calculating exchange rates
+  // eg. 1 DAI = ?? WETH
+  //     1 WETH = ?? DAI
   const daiPerWeth = pairReserves[0] / pairReserves[1];
   const wethPerDai = pairReserves[1] / pairReserves[0];
 
